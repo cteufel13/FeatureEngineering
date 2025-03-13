@@ -81,4 +81,11 @@ if __name__ == "__main__":
         help="Prediction horizon.",
     )
 
+    parser.add_argument(
+        "run_live",
+        type=bool,
+        default=False,
+        help="Run live prediction.",
+    )
+
     run_pipeline(parser.parse_args())

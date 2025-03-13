@@ -10,6 +10,8 @@ from pathlib import Path
 
 from src.model.model import *
 from src.model.dataset import *
+from src.features.featurizer import *
+from src.model.live_test import LiveStreamPredictor
 
 
 def run_pipeline(args):
@@ -34,6 +36,13 @@ def run_pipeline(args):
     SYMBOL = args.symbol
     START_DATE = args.start_date
     END_DATE = args.end_date
+
+    n_samples = args.n_samples
+    len_sequence = args.seq_len
+    predict_horizon = args.predict_horizon
+
+    featurizer = featurizer_class()
+    model = model_class()
 
     client = db.Historical(API_KEY)
 
@@ -68,8 +77,30 @@ def run_pipeline(args):
     df_test = df.copy()
     df_test = df_test.drop(["rtype", "publisher_id", "instrument_id", "symbol"], axis=1)
 
-    featurizer_class = featurizer_class()
-
-    df_test = featurizer_class.featurize(df_test)
+    df_test = featurizer.featurize(df_test)
 
     df_test = df_test.drop(["ts_event"], axis=1)
+
+    dataset = dataset_class(
+        df_test,
+        n_samples=n_samples,
+        len_sequence=len_sequence,
+        predict_horizon=predict_horizon,
+    )
+
+    dataset.process()
+    X_train, X_test, y_train, y_test = dataset.get_data()
+
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    acc = model.evaluate(X_test, y_test)
+    print(f"Test Accuracy: {acc:.4f}")
+
+    if args.run_live:
+        LiveStreamPredictor(
+            model,
+            SYMBOL,
+            len_sequence,
+            API_KEY,
+            data_feed="iex",
+        ).run()
