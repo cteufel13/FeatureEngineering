@@ -1,0 +1,172 @@
+_wandb:
+    value:
+        cli_version: 0.19.8
+        m: []
+        python_version: 3.11.8
+        t:
+            "1":
+                - 5
+                - 6
+                - 53
+                - 55
+                - 105
+            "2":
+                - 5
+                - 6
+                - 53
+                - 55
+                - 105
+            "3":
+                - 16
+                - 23
+                - 31
+                - 55
+            "4": 3.11.8
+            "5": 0.19.8
+            "8":
+                - 5
+            "12": 0.19.8
+            "13": darwin-arm64
+        visualize:
+            Feature Importance:
+                panel_config:
+                    fieldSettings:
+                        label: Feature
+                        value: Importance
+                    panelDefId: wandb/bar/v0
+                    stringSettings:
+                        title: Feature Importance
+                    transform:
+                        name: tableWithLeafColNames
+                    userQuery:
+                        queryFields:
+                            - args:
+                                - name: runSets
+                                  value: ${runSets}
+                              fields:
+                                - fields: []
+                                  name: id
+                                - fields: []
+                                  name: name
+                                - fields: []
+                                  name: _defaultColorIndex
+                                - args:
+                                    - name: tableKey
+                                      value: Feature Importance_table
+                                  fields: []
+                                  name: summaryTable
+                              name: runSets
+                panel_type: Vega2
+colsample_bytree:
+    value: 1
+dataset:
+    value: XNAS.ITCH
+end_date:
+    value: "2025-02-28"
+eval_metric:
+    value: mlogloss
+gamma:
+    value: 0
+learner:
+    value:
+        generic_param:
+            device: cpu
+            fail_on_invalid_gpu_id: "0"
+            n_jobs: "0"
+            nthread: "0"
+            random_state: "42"
+            seed: "42"
+            seed_per_iteration: "0"
+            validate_parameters: "1"
+        gradient_booster:
+            gbtree_model_param:
+                num_parallel_tree: "1"
+                num_trees: "0"
+            gbtree_train_param:
+                process_type: default
+                tree_method: auto
+                updater: grow_quantile_histmaker
+                updater_seq: grow_quantile_histmaker
+            name: gbtree
+            specified_updater: false
+            tree_train_param:
+                alpha: "0"
+                cache_opt: "1"
+                colsample_bylevel: "1"
+                colsample_bynode: "1"
+                colsample_bytree: "1"
+                eta: "0.100000001"
+                gamma: "0"
+                grow_policy: depthwise
+                interaction_constraints: ""
+                lambda: "1"
+                learning_rate: "0.100000001"
+                max_bin: "256"
+                max_cat_threshold: "64"
+                max_cat_to_onehot: "4"
+                max_delta_step: "0"
+                max_depth: "6"
+                max_leaves: "0"
+                min_child_weight: "1"
+                min_split_loss: "0"
+                monotone_constraints: ()
+                refresh_leaf: "1"
+                reg_alpha: "0"
+                reg_lambda: "1"
+                sampling_method: uniform
+                sketch_ratio: "2"
+                sparse_threshold: "0.20000000000000001"
+                subsample: "1"
+            updater:
+                - hist_train_param:
+                    debug_synchronize: "0"
+                    max_cached_hist_node: "65536"
+                  name: grow_quantile_histmaker
+        learner_model_param:
+            base_score: "5E-1"
+            boost_from_average: "1"
+            num_class: "3"
+            num_feature: "500"
+            num_target: "1"
+        learner_train_param:
+            booster: gbtree
+            disable_default_eval_metric: "0"
+            multi_strategy: one_output_per_tree
+            objective: multi:softprob
+        metrics:
+            - name: mlogloss
+        objective:
+            name: multi:softprob
+            softmax_multiclass_param:
+                num_class: "3"
+learning_rate:
+    value: 0.1
+len_sequence:
+    value: 100
+max_depth:
+    value: 6
+min_child_weight:
+    value: 1
+n_estimators:
+    value: 100
+n_samples:
+    value: 10000
+objective:
+    value: multi:softprob
+predict_horizon:
+    value: 10
+random_state:
+    value: 42
+start_date:
+    value: "2018-05-01"
+subsample:
+    value: 1
+symbol:
+    value: AAPL
+tree_method:
+    value: auto
+version:
+    value:
+        - 2
+        - 1
+        - 4

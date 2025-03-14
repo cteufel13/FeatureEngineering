@@ -1,5 +1,14 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.base import BaseEstimator, TransformerMixin
+
+
+class FlattenTransformer(BaseEstimator, TransformerMixin):
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X):
+        return X.reshape(X.shape[0], -1)  # Flatten (n_samples, Seq_len * n_features)
 
 
 def visualize_performance(

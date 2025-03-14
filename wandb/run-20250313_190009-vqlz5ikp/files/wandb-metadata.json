@@ -1,0 +1,16 @@
+{
+  "os": "macOS-14.6.1-arm64-arm-64bit",
+  "python": "CPython 3.11.8",
+  "startedAt": "2025-03-13T23:00:09.480379Z",
+  "program": "/Users/carloteufel/Documents/Projects/FeatureEngineering/run.py",
+  "codePath": "run.py",
+  "git": {
+    "remote": "https://github.com/cteufel13/FeatureEngineering.git",
+    "commit": "a24522aa3191648ad102231a03735ee8afd47fe7"
+  },
+  "email": "cteufel@ethz.ch",
+  "root": "/Users/carloteufel/Documents/Projects/FeatureEngineering",
+  "host": "Carlos-MBP",
+  "executable": "/Users/carloteufel/Documents/Projects/FeatureEngineering/.venv/bin/python",
+  "codePathLocal": "run.py"
+}

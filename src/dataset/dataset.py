@@ -1,13 +1,13 @@
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
-
+from src.core.base import DatasetBase
 from tqdm import tqdm
 
 import time
 
 
-class Dataset1:
+class Dataset1(DatasetBase):
 
     def __init__(
         self,
@@ -35,12 +35,6 @@ class Dataset1:
             (self.n_samples, self.len_sequence + predict_horizon, self.n_features)
         )
 
-        print(f"Data shape: {self.rawdata.shape}")
-        print(f"X shape: {self.X.shape}")
-        print(f"y shape: {self.y.shape}")
-        print(f"aux_data shape: {self.aux_data.shape}")
-        print(f"complete_sequence shape: {self.complete_sequence.shape}")
-
     def process(self):
 
         self.rawdata["std"] = (
@@ -53,10 +47,6 @@ class Dataset1:
             self.len_data - 2 * self.len_sequence - self.predict_horizon,
             self.n_samples,
         ).astype(int)
-
-        print(
-            "random_start_points", len(random_start_points), "\n", random_start_points
-        )
 
         for i, start_point in tqdm(enumerate(random_start_points)):
             sequence = self.rawdata.iloc[

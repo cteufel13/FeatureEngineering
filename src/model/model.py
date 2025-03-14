@@ -1,42 +1,22 @@
 import numpy as np
 import pandas as pd
-
 import xgboost as xgb
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
-from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
-
-class FlattenTransformer(BaseEstimator, TransformerMixin):
-    def fit(self, X, y=None):
-        return self
-
-    def transform(self, X):
-        return X.reshape(X.shape[0], -1)  # Flatten (n_samples, Seq_len * n_features)
+from src.core.base import ModelBase
+from src.model.utils import FlattenTransformer
 
 
-class BasicXGBOOST1:
+class BasicXGBOOST1(ModelBase):
 
-    def __init__(self, **kwargs):
-        self.xgb_pipeline = Pipeline(
-            [
-                ("flatten", FlattenTransformer()),
-                ("scaler", StandardScaler()),
-                (
-                    "xgb",
-                    xgb.XGBClassifier(
-                        objective="multi:softmax",
-                        eval_metric="mlogloss",
-                        num_class=5,
-                        n_estimators=200,
-                        max_depth=30,
-                        kwargs=kwargs,
-                    ),
-                ),
-            ]
-        )
+    job_type = "classification"
+    base_library = "xgboost"
+
+    def __init__(self):
+        pass
 
     def fit(self, X, y):
         self.xgb_pipeline.fit(X, y)
@@ -47,3 +27,15 @@ class BasicXGBOOST1:
     def evaluate(self, X, y):
         y_pred = self.predict(X)
         return accuracy_score(y, y_pred)
+
+    def init_model(self, callbacks, **params):
+        self.xgb_pipeline = Pipeline(
+            [
+                ("flatten", FlattenTransformer()),
+                ("scaler", StandardScaler()),
+                (
+                    "xgb",
+                    xgb.XGBClassifier(callbacks=[callbacks], **params),
+                ),
+            ]
+        )

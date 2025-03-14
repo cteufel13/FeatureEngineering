@@ -7,29 +7,26 @@ import plotly.graph_objects as go
 import os
 from pathlib import Path
 
-
+from src.data.prep import drop_db_cols
+from src.data.utils import get_data, check_file
 from src.model.model import *
-from src.model.dataset import *
+from src.model.utils import visualize_performance
+from src.dataset.dataset import *
 from src.features.featurizer import *
 from src.model.live_test import LiveStreamPredictor
 
+import wandb
+from wandb.integration.xgboost import WandbCallback
+
 
 def run_pipeline(args):
+    """
+    -------------   0. Load the classes   -------------
+    """
 
-    try:
-        dataset_class = globals()[args.dataset]
-    except Exception as e:
-        print("Error loading dataset class:", e)
-
-    try:
-        model_class = globals()[args.model]
-    except Exception as e:
-        print("Error loading model class:", e)
-
-    try:
-        featurizer_class = globals()[args.featurizer]
-    except Exception as e:
-        print("Error loading featurizer class:", e)
+    dataset_class = globals()[args.dataset]
+    model_class = globals()[args.model]
+    featurizer_class = globals()[args.featurizer]
 
     API_KEY = os.environ["DATABENTO_KEY"]
     DATASET = args.DB_Dataset
@@ -44,38 +41,63 @@ def run_pipeline(args):
     featurizer = featurizer_class()
     model = model_class()
 
-    client = db.Historical(API_KEY)
+    wandb_params = {
+        "dataset": DATASET,
+        "symbol": SYMBOL,
+        "start_date": START_DATE,
+        "end_date": END_DATE,
+        "n_samples": n_samples,
+        "len_sequence": len_sequence,
+        "predict_horizon": predict_horizon,
+    }
 
-    current_folder = Path.cwd()
-    subfolder = current_folder / "data"
-    history_file = subfolder / "AAPL_minute_data.csv"
+    if args.use_wandb:
+        wandb.init(project="Forecasting Market", config=wandb_params)
 
-    got_ticker = False
+    if model.base_library == "xgboost":
 
-    if history_file.exists():
-        print("File exists!")
-        got_ticker = True
-    else:
-        print("File does not exist.")
+        model_params = {
+            "objective": args.xgboost_objective,
+            "eval_metric": args.xgboost_eval_metric,
+            "n_estimators": args.xgboost_n_estimators,
+            "learning_rate": args.xgboost_learning_rate,
+            "max_depth": args.xgboost_max_depth,
+            "subsample": args.xgboost_subsample,
+            "colsample_bytree": args.xgboost_colsample_bytree,
+            "min_child_weight": args.xgboost_min_child_weight,
+            "gamma": args.xgboost_gamma,
+            "random_state": args.xgboost_random_state,
+            "tree_method": args.xgboost_tree_method,
+        }
 
-    if got_ticker:
-        print("Reading file...")
-        df = pd.read_csv(history_file)
-    else:
-        print("Fetching data...")
-        # Fetch minute-bar data
-        df = client.timeseries.get_range(
-            dataset=DATASET,
-            symbols=SYMBOL,
-            schema="ohlcv-1m",
-            start=START_DATE,
-            end=END_DATE,
-        ).to_df()
+        wandb.config.update(model_params)
+        callback = WandbCallback()
 
-        df.to_csv(f"data/{SYMBOL}_minute_data.csv")
+    model.init_model(callback, **model_params)
 
-    df_test = df.copy()
-    df_test = df_test.drop(["rtype", "publisher_id", "instrument_id", "symbol"], axis=1)
+    """
+    -------------   1. Get the data   -------------
+    """
+
+    file_exists, history_file = check_file(SYMBOL)
+
+    df = get_data(
+        file_exists=file_exists,
+        path=history_file,
+        Dataset=DATASET,
+        Symbol=SYMBOL,
+        start_date=START_DATE,
+        end_date=END_DATE,
+        api_key=API_KEY,
+    )
+
+    df_test = drop_db_cols(df)
+
+    """
+    -------------   2. Featurize the data   -------------
+    """
+
+    print("Featurizing data...")
 
     df_test = featurizer.featurize(df_test)
 
@@ -88,13 +110,35 @@ def run_pipeline(args):
         predict_horizon=predict_horizon,
     )
 
+    """
+    -------------   3. Train the model   -------------
+    """
+
+    print("Processing data...")
+
     dataset.process()
+
     X_train, X_test, y_train, y_test = dataset.get_data()
 
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
     acc = model.evaluate(X_test, y_test)
+
     print(f"Test Accuracy: {acc:.4f}")
+
+    aux_train, aux_test, complete_sequence_train, complete_sequence_test = (
+        dataset.get_aux_data()
+    )
+
+    for i in range(10):
+        visualize_performance(
+            X_test,
+            y_test,
+            y_pred,
+            i,
+            aux_test,
+            complete_sequence_test,
+        )
 
     if args.run_live:
         LiveStreamPredictor(
