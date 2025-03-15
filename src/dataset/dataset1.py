@@ -32,7 +32,7 @@ class Dataset1(DatasetBase):
 
         self.aux_data = np.zeros((self.n_samples, 1))
         self.complete_sequence = np.empty(
-            (self.n_samples, self.len_sequence + predict_horizon, self.n_features)
+            (self.n_samples, self.len_sequence + predict_horizon + 20, self.n_features)
         )
 
     def process(self):
@@ -43,8 +43,8 @@ class Dataset1(DatasetBase):
         self.rawdata.dropna(inplace=True)
 
         random_start_points = np.linspace(
-            0,
-            self.len_data - 2 * self.len_sequence - self.predict_horizon,
+            10,
+            self.len_data - 2 * self.len_sequence - self.predict_horizon - 10,
             self.n_samples,
         ).astype(int)
 
@@ -61,7 +61,16 @@ class Dataset1(DatasetBase):
 
             self.aux_data[i] = std
 
-            self.complete_sequence[i, :, :] = sequence.drop(["std"], axis=1).values
+            complete_sequence = self.rawdata.iloc[
+                start_point
+                - 10 : start_point
+                + self.len_sequence
+                + self.predict_horizon
+                + 10
+            ]
+            self.complete_sequence[i, :, :] = complete_sequence.drop(
+                ["std"], axis=1
+            ).values
 
     def label(self, sequence: pd.DataFrame, std: float):
         """

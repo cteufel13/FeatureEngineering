@@ -11,7 +11,7 @@ from src.data.prep import drop_db_cols
 from src.data.utils import get_data, check_file
 from src.model.model import *
 from src.model.utils import visualize_performance
-from src.dataset.dataset import *
+from src.dataset.dataset1 import *
 from src.features.featurizer import *
 from src.model.live_test import LiveStreamPredictor
 
@@ -70,7 +70,7 @@ def run_pipeline(args):
             "tree_method": args.xgboost_tree_method,
         }
 
-        wandb.config.update(model_params)
+        # wandb.config.update(model_params)
         callback = WandbCallback()
 
     model.init_model(callback, **model_params)
@@ -130,15 +130,23 @@ def run_pipeline(args):
         dataset.get_aux_data()
     )
 
+    category_preds = None
+
+    if model.job_type == "classification":
+        category_preds = model.predict_categories(X_test)
+
     for i in range(10):
-        visualize_performance(
+        figure = visualize_performance(
             X_test,
             y_test,
             y_pred,
             i,
             aux_test,
             complete_sequence_test,
+            buffer_factor=0.005,
+            category_preds=category_preds,
         )
+        wandb.log({f"test_set_result_{i}": figure})
 
     if args.run_live:
         LiveStreamPredictor(

@@ -39,3 +39,6 @@ class BasicXGBOOST1(ModelBase):
                 ),
             ]
         )
+
+    def predict_categories(self, X_test):
+        return self.xgb_pipeline.predict_proba(X_test)
