@@ -1,0 +1,268 @@
+{
+    "db_datasets": [
+        "DBEQ.PILLAR",
+        "DBEQ-MINI.PILLAR",
+        "OPRA.PILLAR",
+        "GLBX.MDP3",
+        "IFEU.PILLAR",
+        "IFEU-ENDX.PILLAR",
+        "DBEQ-CORP-ACTIONS",
+        "XNAS.ITCH",
+        "XBXO.ITCH",
+        "XPSX.ITCH",
+        "XNYS.INTEGRATED",
+        "XASE.INTEGRATED",
+        "ARCX.INTEGRATED",
+        "XNYS-TRADES",
+        "XCHI.INTEGRATED",
+        "XCHI-TRADES-BBO",
+        "XBZX.DEPTH",
+        "XBYX.DEPTH",
+        "XEDG.DEPTH",
+        "XEDGA.DEPTH",
+        "MEMX.DEPTH",
+        "XMIO.DOM",
+        "IEX.TOPS",
+        "FINRA-NASDAQ-TRF-CARTERET",
+        "FINRA-NASDAQ-TRF-CHICAGO",
+        "FINRA-NYSE-TRF"
+    ],
+    "db_schemas": [
+        "MBO",
+        "MBP-1",
+        "MBP-10",
+        "MBP-25",
+        "TRADES",
+        "ORDER_IMBALANCE",
+        "OHLCV-1S",
+        "OHLCV-1M",
+        "OHLCV-1H",
+        "OHLCV-1D",
+        "BBO",
+        "STATISTICS",
+        "IMBALANCE"
+    ],
+    "symbols": {
+        "AAPL": {
+            "db_dataset": "XNAS.ITCH",
+            "db_schemas": {
+                "imbalance": {
+                    "start_date": "2018-04-30 20:00:00",
+                    "end_date": "2025-03-16 23:59:00"
+                },
+                "bbo-1m": {
+                    "start_date": "2018-04-30 20:00:00",
+                    "end_date": "2025-03-16 23:59:00"
+                },
+                "ohlcv-1m": {
+                    "start_date": "2018-04-30 20:00:00",
+                    "end_date": "2025-03-16 23:59:00"
+                }
+            }
+        },
+        "AMZN": {
+            "db_dataset": "XNAS.ITCH",
+            "db_schemas": {
+                "imbalance": {
+                    "start_date": "2018-04-30 20:00:00",
+                    "end_date": "2025-03-16 23:59:00"
+                },
+                "bbo-1m": {
+                    "start_date": "2018-04-30 20:00:00",
+                    "end_date": "2025-03-16 23:59:00"
+                },
+                "ohlcv-1m": {
+                    "start_date": "2018-04-30 20:00:00",
+                    "end_date": "2025-03-16 23:59:00"
+                }
+            }
+        },
+        "META": {
+            "db_dataset": "XNAS.ITCH",
+            "db_schemas": {
+                "imbalance": {
+                    "start_date": "2018-04-30 20:00:00",
+                    "end_date": "2025-03-14 20:00:00"
+                },
+                "bbo-1m": {
+                    "start_date": "2018-04-30 20:00:00",
+                    "end_date": "2025-03-14 20:00:00"
+                },
+                "ohlcv-1m": {
+                    "start_date": "2018-04-30 20:00:00",
+                    "end_date": "2025-03-14 20:00:00"
+                }
+            }
+        },
+        "TSLA": {
+            "db_dataset": "XNAS.ITCH",
+            "db_schemas": {
+                "imbalance": {
+                    "start_date": "2018-04-30 20:00:00",
+                    "end_date": "2025-03-16 23:59:00"
+                },
+                "bbo-1m": {
+                    "start_date": "2018-04-30 20:00:00",
+                    "end_date": "2025-03-16 23:59:00"
+                },
+                "ohlcv-1m": {
+                    "start_date": "2018-04-30 20:00:00",
+                    "end_date": "2025-03-16 23:59:00"
+                }
+            }
+        },
+        "NFLX": {
+            "db_dataset": "XNAS.ITCH",
+            "db_schemas": {
+                "imbalance": {
+                    "start_date": "2018-04-30 20:00:00",
+                    "end_date": "2025-03-16 23:59:00"
+                },
+                "bbo-1m": {
+                    "start_date": "2018-04-30 20:00:00",
+                    "end_date": "2025-03-16 23:59:00"
+                },
+                "ohlcv-1m": {
+                    "start_date": "2018-04-30 20:00:00",
+                    "end_date": "2025-03-16 23:59:00"
+                }
+            }
+        },
+        "MSFT": {
+            "db_dataset": "XNAS.ITCH",
+            "db_schemas": {
+                "imbalance": {
+                    "start_date": "2018-04-30 20:00:00",
+                    "end_date": "2025-03-16 23:59:00"
+                },
+                "bbo-1m": {
+                    "start_date": "2018-04-30 20:00:00",
+                    "end_date": "2025-03-16 23:59:00"
+                },
+                "ohlcv-1m": {
+                    "start_date": "2018-04-30 20:00:00",
+                    "end_date": "2025-03-16 23:59:00"
+                }
+            }
+        },
+        "AVGO": {
+            "db_dataset": "XNAS.ITCH",
+            "db_schemas": {
+                "imbalance": {
+                    "start_date": "2018-04-30 20:00:00",
+                    "end_date": "2025-03-14 20:00:00"
+                },
+                "bbo-1m": {
+                    "start_date": "2018-04-30 20:00:00",
+                    "end_date": "2025-03-14 20:00:00"
+                },
+                "ohlcv-1m": {
+                    "start_date": "2018-04-30 20:00:00",
+                    "end_date": "2025-03-14 20:00:00"
+                }
+            }
+        },
+        "ADBE": {
+            "db_dataset": "XNAS.ITCH",
+            "db_schemas": {
+                "imbalance": {
+                    "start_date": "2018-04-30 20:00:00",
+                    "end_date": "2025-03-14 20:00:00"
+                },
+                "bbo-1m": {
+                    "start_date": "2018-04-30 20:00:00",
+                    "end_date": "2025-03-14 20:00:00"
+                },
+                "ohlcv-1m": {
+                    "start_date": "2018-04-30 20:00:00",
+                    "end_date": "2025-03-14 20:00:00"
+                }
+            }
+        },
+        "IBM": {
+            "db_dataset": "XNAS.ITCH",
+            "db_schemas": {
+                "imbalance": {
+                    "start_date": "2018-04-30 20:00:00",
+                    "end_date": "2025-03-14 20:00:00"
+                },
+                "bbo-1m": {
+                    "start_date": "2018-04-30 20:00:00",
+                    "end_date": "2025-03-14 20:00:00"
+                },
+                "ohlcv-1m": {
+                    "start_date": "2018-04-30 20:00:00",
+                    "end_date": "2025-03-14 20:00:00"
+                }
+            }
+        },
+        "GOOGL": {
+            "db_dataset": "XNAS.ITCH",
+            "db_schemas": {
+                "imbalance": {
+                    "start_date": "2018-04-30 20:00:00",
+                    "end_date": "2025-03-16 23:59:00"
+                },
+                "ohlcv-1m": {
+                    "start_date": "2018-04-30 20:00:00",
+                    "end_date": "2025-03-16 23:59:00"
+                },
+                "bbo-1m": {
+                    "start_date": "2018-04-30 20:00:00",
+                    "end_date": "2025-03-16 23:59:00"
+                }
+            }
+        },
+        "NVDA": {
+            "db_dataset": "XNAS.ITCH",
+            "db_schemas": {
+                "ohlcv-1m": {
+                    "start_date": "1525132800000000000",
+                    "end_date": "2025-03-16 23:59:00"
+                },
+                "bbo-1m": {
+                    "start_date": "1525132800000000000",
+                    "end_date": "2025-03-16 23:59:00"
+                },
+                "imbalance": {
+                    "start_date": "1525132800000000000",
+                    "end_date": "2025-03-16 23:59:00"
+                }
+            }
+        },
+        "INTC": {
+            "db_dataset": "XNAS.ITCH",
+            "db_schemas": {
+                "ohlcv-1m": {
+                    "start_date": "1525132800000000000",
+                    "end_date": "2025-03-16 23:59:00"
+                },
+                "bbo-1m": {
+                    "start_date": "1525132800000000000",
+                    "end_date": "2025-03-16 23:59:00"
+                },
+                "imbalance": {
+                    "start_date": "1525132800000000000",
+                    "end_date": "2025-03-16 23:59:00"
+                }
+            }
+        },
+        "AMD": {
+            "db_dataset": "XNAS.ITCH",
+            "db_schemas": {
+                "ohlcv-1m": {
+                    "start_date": "1525132800000000000",
+                    "end_date": "2025-03-16 23:59:00"
+                },
+                "bbo-1m": {
+                    "start_date": "1525132800000000000",
+                    "end_date": "2025-03-16 23:59:00"
+                },
+                "imbalance": {
+                    "start_date": "1525132800000000000",
+                    "end_date": "2025-03-16 23:59:00"
+                }
+            }
+        }
+    }
+}
