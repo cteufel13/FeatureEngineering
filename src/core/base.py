@@ -31,3 +31,6 @@ class FeaturizerBase:
 
     def featurize(self, data):
         raise NotImplementedError
+
+    def process(self):
+        raise NotImplementedError

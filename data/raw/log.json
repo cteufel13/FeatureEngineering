@@ -264,5 +264,10 @@
                 }
             }
         }
-    }
+    },
+    "schemas": [
+        "ohlcv-1m",
+        "bbo-1m",
+        "imbalance"
+    ]
 }

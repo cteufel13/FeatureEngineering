@@ -7,8 +7,8 @@ import plotly.graph_objects as go
 import os
 from pathlib import Path
 
-from src.data.prep import drop_db_cols
-from src.data.utils import get_data, check_file
+from src.data.utils import drop_db_cols
+from src.data.datafetcher import DataFetcher
 from src.model.model import *
 from src.model.utils import visualize_performance
 from src.dataset.dataset1 import *

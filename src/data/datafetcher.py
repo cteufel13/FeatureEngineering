@@ -1,8 +1,6 @@
 import os
 import polars as pl
-import pandas as pd
 import json
-import requests
 from datetime import datetime, timedelta
 import databento as db
 
@@ -164,6 +162,9 @@ class DataFetcher:
                 print("Updating end date for", symbol, schema, end_date)
                 self.symbols[symbol]["db_schemas"][schema]["end_date"] = end_date
 
+        self.log["schemas"] = list(
+            set(self.log.get("schemas", []) + list(self.symbols.keys()))
+        )
         self.save_log(self.log)
 
     def join_cache(self, schemas):
