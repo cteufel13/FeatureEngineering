@@ -196,7 +196,7 @@
                 }
             }
         },
-        "GOOGL": {
+        "GOOG": {
             "db_dataset": "XNAS.ITCH",
             "db_schemas": {
                 "imbalance": {
