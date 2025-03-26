@@ -11,6 +11,9 @@ class ModelBase:
     def evaluate(self, X, y):
         raise NotImplementedError
 
+    def save(self, path):
+        raise NotImplementedError
+
 
 class DatasetBase:
 

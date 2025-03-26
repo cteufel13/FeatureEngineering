@@ -56,3 +56,11 @@ class BasicXGBOOST1(ModelBase):
 
     def predict_categories(self, X_test):
         return self.xgb_pipeline.predict_proba(X_test)
+
+    def save(self, path):
+        self.xgb_pipeline.named_steps["xgb"].save_model(path)
+        print(f"Model saved to {path}")
+
+    def load(self, path):
+        self.xgb_pipeline.named_steps["xgb"].load_model(path)
+        print(f"Model loaded from {path}")

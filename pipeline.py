@@ -11,6 +11,7 @@ def run():
     model.fit(X_train, y_train)
     accuracy = model.evaluate(X_test, y_test)
     print(f"Accuracy: {accuracy}")
+    model.save("saved_models/model_xgboost1.json")
 
 
 if __name__ == "__main__":
