@@ -57,17 +57,9 @@ class Featurizer2(FeaturizerBase):
             ["ts_event", "rtype", "publisher_id", "instrument_id", "symbol"]
         )
 
-        # bbo_data = self.process_bbos(bbo_data, time_symbol)
-
+        self.process_bbos(bbo_data, time_symbol)
         self.process_ohlcv(ohlcv_data)
-
-        # bbo_data.write_parquet("data/processed/bbo_data.parquet")
-
-        return ohlcv_data, bbo_data, imbalance_data
-
-    def downsampling():
-
-        pass
+        self.process_imbalance(imbalance_data, time_symbol)
 
     def load_data(self):
         ohlcv_data = pl.read_parquet(RAW_PATH + self.raw_data_paths[0])
@@ -77,10 +69,6 @@ class Featurizer2(FeaturizerBase):
         return ohlcv_data, bbo_data, imbalance_data
 
     def process_bbos(self, bbo_data: pl.DataFrame, time_data):
-        """
-        Process BBO data for all symbols at once using vectorized operations.
-        This is a drop-in replacement for the original function.
-        """
 
         bbo_data = bbo_data.with_columns(
             pl.when(pl.col("symbol") == "GOOGL")
@@ -379,25 +367,27 @@ class Featurizer2(FeaturizerBase):
         symbols = ohlcv_data["symbol"].unique().to_list()
 
         for symbol in symbols:
+            print(f"Processing symbol {symbol}")
             symbol_data = ohlcv_data.filter(pl.col("symbol") == symbol)
             symbol_data = symbol_data.sort("ts_event")
 
+            symbol_data = self.calc_ta_indicators(symbol_data)
             symbol_data.write_parquet(f"data/processed/{symbol}/ohlcv_data.parquet")
 
-    def calculate_ta_indicators(self, ohlcv_data_symbol: pl.DataFrame):
+    def calc_ta_indicators(self, ohlcv_data_symbol: pl.DataFrame):
         # ------- SMAs ---------#
 
         ohlcv_data_symbol = ohlcv_data_symbol.with_columns(
-            pl.col("c").rolling_mean(window_size=5).alias("sma_5"),
-            pl.col("c").rolling_mean(window_size=10).alias("sma_10"),
-            pl.col("c").rolling_mean(window_size=20).alias("sma_20"),
-            pl.col("c").rolling_mean(window_size=30).alias("sma_30"),
-            pl.col("c").rolling_mean(window_size=50).alias("sma_60"),
-            pl.col("c").rolling_mean(window_size=100).alias("sma_200"),
+            pl.col("close").rolling_mean(window_size=5).alias("sma_5"),
+            pl.col("close").rolling_mean(window_size=10).alias("sma_10"),
+            pl.col("close").rolling_mean(window_size=20).alias("sma_20"),
+            pl.col("close").rolling_mean(window_size=30).alias("sma_30"),
+            pl.col("close").rolling_mean(window_size=50).alias("sma_60"),
+            pl.col("close").rolling_mean(window_size=100).alias("sma_200"),
         )
 
         # -------- EMAs ---------#
-        c_np = ohlcv_data_symbol["c"].to_numpy()
+        c_np = ohlcv_data_symbol["close"].to_numpy()
         ohlcv_data_symbol = ohlcv_data_symbol.with_columns(
             [
                 pl.Series("ema_12", self.compute_ema(c_np, 12)),
@@ -407,7 +397,375 @@ class Featurizer2(FeaturizerBase):
             ]
         )
 
-        pass
+        # -------- RSI ---------#
+        ohlcv_data_symbol = ohlcv_data_symbol.with_columns(
+            pl.Series("rsi_14", self.compute_rsi(c_np, 14)),
+            pl.Series("rsi_30", self.compute_rsi(c_np, 30)),
+            pl.Series("rsi_50", self.compute_rsi(c_np, 50)),
+        )
+
+        ohlcv_data_symbol = ohlcv_data_symbol.with_columns(
+            [
+                (
+                    (
+                        ((pl.col("high") + pl.col("low") + pl.col("close")) / 3)
+                        * pl.col("volume")
+                    ).cum_sum()
+                    / pl.col("volume").cum_sum()
+                ).alias("vwap_typical_ohlcv")
+            ]
+        )
+
+        # -------- Stoch. Oscillator --------- #
+
+        period = 14
+        ohlcv_data_symbol = ohlcv_data_symbol.with_columns(
+            [
+                pl.col("low").rolling_min(window_size=period).alias("lowest_low"),
+                pl.col("high").rolling_max(window_size=period).alias("highest_high"),
+            ]
+        )
+
+        # Calculate %K
+        ohlcv_data_symbol = ohlcv_data_symbol.with_columns(
+            [
+                (
+                    (
+                        (pl.col("close") - pl.col("lowest_low"))
+                        / (pl.col("highest_high") - pl.col("lowest_low"))
+                    )
+                    * 100
+                ).alias("stochastic_k")
+            ]
+        )
+
+        # Calculate %D as a 3-period moving average of %K
+        ohlcv_data_symbol = ohlcv_data_symbol.with_columns(
+            [pl.col("stochastic_k").rolling_mean(window_size=3).alias("stochastic_d")]
+        )
+
+        return ohlcv_data_symbol
+
+    def process_imbalance(self, imbalance_data: pl.DataFrame, time_data: pl.DataFrame):
+        imbalance_data = imbalance_data.with_columns(
+            pl.when(pl.col("symbol") == "GOOGL")
+            .then(pl.lit("GOOG"))
+            .otherwise(pl.col("symbol"))
+            .alias("symbol")
+        )
+
+        time_data = time_data.with_columns(
+            pl.when(pl.col("symbol") == "GOOGL")
+            .then(pl.lit("GOOG"))
+            .otherwise(pl.col("symbol"))
+            .alias("symbol")
+        )
+
+        # Get unique symbols and sort
+        symbols = imbalance_data["symbol"].unique().to_list()
+        symbols.sort()
+
+        print(f"Processing symbols: {symbols}")
+
+        for symbol in symbols:
+            print(f"Processing symbol {symbol}")
+
+            # Collect time data for the symbol
+            symbol_times = time_data.filter(pl.col("symbol") == symbol)
+            print(symbol_times)
+            if symbol_times.height < 2:
+                continue
+
+            # Extract time points and create intervals
+            symbol_times_np = symbol_times["ts_event"].to_numpy()
+            starts = pl.Series(
+                symbol_times_np[:-1], dtype=pl.Datetime("ns", time_zone="UTC")
+            )
+            ends = pl.Series(
+                symbol_times_np[1:], dtype=pl.Datetime("ns", time_zone="UTC")
+            )
+            symbol_list = [symbol] * len(starts)
+            interval_idx = np.arange(0, len(starts))
+
+            print(len(starts), len(ends), len(symbol_list), len(interval_idx))
+
+            # Create intervals DataFrame
+            intervals_df = pl.DataFrame(
+                {
+                    "interval_idx": interval_idx,
+                    "start_time": starts,
+                    "end_time": ends,
+                    "symbol": symbol_list,
+                }
+            ).with_columns(
+                [
+                    pl.col("start_time")
+                    .dt.replace_time_zone("UTC")
+                    .alias("start_time"),
+                    pl.col("end_time").dt.replace_time_zone("UTC").alias("end_time"),
+                ]
+            )
+
+            # Filter and prepare imbalance data for the symbol
+            symbol_data = imbalance_data.filter(pl.col("symbol") == symbol)
+            symbol_data = symbol_data.filter(pl.col("ts_event").is_not_null())
+
+            if symbol_data.height == 0:
+                continue
+
+            # Use join_asof to efficiently assign intervals
+            symbol_data = symbol_data.join_asof(
+                intervals_df.sort("start_time"),
+                left_on="ts_event",
+                right_on="start_time",
+                strategy="forward",
+                suffix="_interval",
+            )
+            symbol_data = symbol_data.filter(pl.col("ts_event") <= pl.col("end_time"))
+
+            if symbol_data.height == 0:
+                continue
+
+            interval_results = []
+
+            # Partition data by interval
+            partitioned_data = symbol_data.partition_by("interval_idx", as_dict=True)
+            partition_items = list(partitioned_data.items())
+
+            for key, interval_data in tqdm(
+                partition_items, desc=f"Processing {symbol}"
+            ):
+                interval_idx = interval_data["interval_idx"][0]
+
+                if interval_idx >= len(ends):  # Safety check
+                    continue
+
+                end_min = ends[interval_idx]
+
+                # Prep and calculate imbalance indicators for each interval
+                interval_data_df = pl.DataFrame(interval_data)
+                interval_data_df = self.prep_imbalance_data(interval_data_df)
+                interval_data_df = self.calc_imbalance_indicators(
+                    interval_data_df, symbol, end_min
+                )
+
+                interval_results.append(interval_data_df)
+
+            if interval_results:
+                # Concatenate and sort results
+                symbol_results = pl.concat(interval_results)
+                symbol_results = symbol_results.sort("ts_event")
+
+                # Write processed data to parquet
+                symbol_results.write_parquet(
+                    f"data/processed/{symbol}/imbalance_data.parquet"
+                )
+
+    def calc_imbalance_indicators(
+        self, orderbook_interval: pl.DataFrame, symbol: str, end_min
+    ) -> pl.DataFrame:
+
+        # Extract key identifiers
+        rtype = orderbook_interval["rtype"][0]
+        publisher_id = orderbook_interval["publisher_id"][0]
+        instrument_id = orderbook_interval["instrument_id"][0]
+
+        # Additional derived metrics
+        expr_list = [
+            # Core metrics
+            ((pl.col("ref_price") - pl.col("ref_price").shift(1)).abs()).alias(
+                "price_change"
+            ),
+            (pl.col("total_imbalance_qty") / pl.col("paired_qty")).alias(
+                "imbalance_ratio"
+            ),
+            # Trading side and auction type characteristics
+            pl.col("side").alias("dominant_side"),
+            pl.col("auction_type").alias("auction_type"),
+        ]
+
+        # Process the data with additional computations
+        aux_data = orderbook_interval.with_columns(expr_list)
+
+        # Calculate interval duration
+        try:
+            time_range = aux_data.select(
+                (pl.max("ts_event") - pl.min("ts_event")).dt.total_seconds()
+            ).item()
+            updates_per_second = len(aux_data) / time_range if time_range > 0 else None
+        except:
+            time_range = None
+            updates_per_second = None
+
+        # Comprehensive schema for detailed statistics
+        schema = {
+            # Temporal and Identifier Information
+            "ts_event": pl.Datetime("us", time_zone="UTC"),
+            "symbol": pl.String,
+            "rtype": pl.Int32,
+            "publisher_id": pl.Int32,
+            "instrument_id": pl.Int32,
+            # Price Metrics
+            "ref_price_mean": pl.Float64,
+            "ref_price_std": pl.Float64,
+            "ref_price_median": pl.Float64,
+            "ref_price_min": pl.Float64,
+            "ref_price_max": pl.Float64,
+            # Clearing Price Metrics
+            "cont_book_clr_price_mean": pl.Float64,
+            "auct_interest_clr_price_mean": pl.Float64,
+            # Quantity and Imbalance Metrics
+            "total_paired_qty": pl.Int64,
+            "total_imbalance_qty": pl.Int64,
+            "mean_imbalance_qty": pl.Float64,
+            "imbalance_ratio_mean": pl.Float64,
+            "imbalance_ratio_std": pl.Float64,
+            # Auction Characteristics
+            "dominant_side": pl.Int32,
+            "auction_type": pl.Int32,
+            "significant_imbalance_count": pl.Int64,
+            # Temporal Metrics
+            "interval_duration": pl.Float64,
+            "updates_per_second": pl.Float64,
+            # Price Change Metrics
+            "mean_price_change": pl.Float64,
+            "std_price_change": pl.Float64,
+            "max_price_change": pl.Float64,
+        }
+
+        # Compile statistics into a single-row DataFrame
+        stats = pl.DataFrame(
+            {
+                # Temporal and Identifier Information
+                "ts_event": [end_min],
+                "symbol": [symbol],
+                "rtype": [rtype],
+                "publisher_id": [publisher_id],
+                "instrument_id": [instrument_id],
+                # Reference Price Metrics
+                "ref_price_mean": [orderbook_interval["ref_price"].mean()],
+                "ref_price_std": [orderbook_interval["ref_price"].std(ddof=0)],
+                "ref_price_median": [orderbook_interval["ref_price"].median()],
+                "ref_price_min": [orderbook_interval["ref_price"].min()],
+                "ref_price_max": [orderbook_interval["ref_price"].max()],
+                # Clearing Price Metrics
+                "cont_book_clr_price_mean": [
+                    orderbook_interval["cont_book_clr_price"].mean()
+                ],
+                "auct_interest_clr_price_mean": [
+                    orderbook_interval["auct_interest_clr_price"].mean()
+                ],
+                # Quantity and Imbalance Metrics
+                "total_paired_qty": [orderbook_interval["paired_qty"].sum()],
+                "total_imbalance_qty": [
+                    orderbook_interval["total_imbalance_qty"].sum()
+                ],
+                "mean_imbalance_qty": [
+                    orderbook_interval["total_imbalance_qty"].mean()
+                ],
+                "imbalance_ratio_mean": [aux_data["imbalance_ratio"].mean()],
+                "imbalance_ratio_std": [aux_data["imbalance_ratio"].std(ddof=0)],
+                # Auction Characteristics
+                "dominant_side": [orderbook_interval["side"].mode()[0]],
+                "auction_type": [orderbook_interval["auction_type"].mode()[0]],
+                "significant_imbalance_count": [
+                    orderbook_interval["significant_imbalance"].sum()
+                ],
+                # Temporal Metrics
+                "interval_duration": [time_range],
+                "updates_per_second": [updates_per_second],
+                # Price Change Metrics
+                "mean_price_change": [aux_data["price_change"].mean()],
+                "std_price_change": [aux_data["price_change"].std(ddof=0)],
+                "max_price_change": [aux_data["price_change"].max()],
+            },
+            schema=schema,
+        )
+
+        return stats
+
+    def prep_imbalance_data(self, imbalance_data_symbol: pl.DataFrame):
+
+        # -------- significant imbalance -------- #
+
+        mapping = {"A": 15, "B": 25, "C": 35, "~": -1, "L": 0}
+        imbalance_data_symbol = imbalance_data_symbol.with_columns(
+            pl.col("significant_imbalance")
+            .replace(mapping)
+            .cast(pl.Int32)
+            .alias("significant_imbalance")
+        )
+
+        imbalance_data_symbol = imbalance_data_symbol.with_columns(
+            pl.col("unpaired_side")
+            .replace({"N": 0})
+            .cast(pl.Int32)
+            .alias("unpaired_side")
+        )
+
+        mapping2 = {"A": 1, "B": -1, "N": 0}
+        imbalance_data_symbol = imbalance_data_symbol.with_columns(
+            pl.col("side").replace(mapping2).cast(pl.Int32).alias("side")
+        )
+
+        mapping3 = {"O": 1, "C": 2, "H": 3, "A": 4}
+        imbalance_data_symbol = imbalance_data_symbol.with_columns(
+            pl.col("auction_type")
+            .replace(mapping3)
+            .cast(pl.Int32)
+            .alias("auction_type")
+        )
+
+        zero_columns = [
+            "auction_time",
+            "ssr_filling_price",
+            "upper_collar",
+            "lower_collar",
+            "market_imbalance_qty",
+            "unpaired_qty",
+            "auction_status",
+            "freeze_status",
+            "num_extensions",
+            "unpaired_side",
+        ]
+
+        imbalance_data_symbol = imbalance_data_symbol.drop(zero_columns)
+
+        return imbalance_data_symbol
+
+    def process_symbols(self):
+
+        for symbol in self.symbols:
+            print(f"Processing symbol {symbol}")
+            ohlcv_data = pl.read_parquet(f"data/processed/{symbol}/ohlcv_data.parquet")
+            bbo_data = pl.read_parquet(f"data/processed/{symbol}/bbo_data.parquet")
+            imbalance_data = pl.read_parquet(
+                f"data/processed/{symbol}/imbalance_data.parquet"
+            )
+
+            ohlcv_data = ohlcv_data.sort("ts_event")
+            bbo_data = bbo_data.sort("ts_event").with_columns(
+                pl.col("ts_event").cast(pl.Datetime("ns", time_zone="UTC"))
+            )
+            imbalance_data = imbalance_data.sort("ts_event").with_columns(
+                pl.col("ts_event").cast(pl.Datetime("ns", time_zone="UTC"))
+            )
+
+            ohlcv_data = ohlcv_data.join(
+                bbo_data,
+                on=["ts_event", "rtype", "instrument_id", "symbol"],
+                how="left",
+                suffix="_bbo",
+            )
+
+            ohlcv_data = ohlcv_data.join(
+                imbalance_data,
+                on=["ts_event", "rtype", "instrument_id", "symbol"],
+                how="left",
+                suffix="_imbalance",
+            )
+
+            ohlcv_data.write_parquet(f"data/processed/{symbol}/merged_data.parquet")
 
     def load_log(self, log_path):
         with open(log_path, "r") as f:
@@ -430,3 +788,23 @@ class Featurizer2(FeaturizerBase):
         for i in range(1, len(series)):
             ema[i] = alpha * series[i] + (1 - alpha) * ema[i - 1]
         return ema
+
+    @staticmethod
+    def compute_rsi(series: np.ndarray, period: int = 14):
+        """
+        Computes the RSI of a numpy array given a period.
+        """
+        delta = series[1:] - series[:-1]
+        gain = delta.clip(min=0)
+        loss = -delta.clip(max=0)
+
+        avg_gain = np.zeros_like(series)
+        avg_loss = np.zeros_like(series)
+        avg_gain[period] = gain[:period].mean()
+        avg_loss[period] = loss[:period].mean()
+
+        for i in range(period + 1, len(series) - 1):
+            avg_gain[i] = (avg_gain[i - 1] * (period - 1) + gain[i]) / period
+            avg_loss[i] = (avg_loss[i - 1] * (period - 1) + loss[i]) / period
+        rs = avg_gain / avg_loss
+        return 100 - (100 / (1 + rs))

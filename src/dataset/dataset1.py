@@ -4,8 +4,6 @@ from sklearn.model_selection import train_test_split
 from src.core.base import DatasetBase
 from tqdm import tqdm
 
-import time
-
 
 class Dataset1(DatasetBase):
 
