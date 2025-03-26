@@ -1,0 +1,17 @@
+from src.dataset.dataset2 import Dataset2
+from src.model.model import BasicXGBOOST1
+
+
+def run():
+    dataset = Dataset2()
+    X_train, X_test, y_train, y_test = dataset.get_train_test()
+    model = BasicXGBOOST1()
+    model.init_model()
+    print("Fitting model")
+    model.fit(X_train, y_train)
+    accuracy = model.evaluate(X_test, y_test)
+    print(f"Accuracy: {accuracy}")
+
+
+if __name__ == "__main__":
+    run()

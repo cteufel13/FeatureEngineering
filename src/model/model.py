@@ -28,17 +28,31 @@ class BasicXGBOOST1(ModelBase):
         y_pred = self.predict(X)
         return accuracy_score(y, y_pred)
 
-    def init_model(self, callbacks, **params):
-        self.xgb_pipeline = Pipeline(
-            [
-                ("flatten", FlattenTransformer()),
-                ("scaler", StandardScaler()),
-                (
-                    "xgb",
-                    xgb.XGBClassifier(callbacks=[callbacks], **params),
-                ),
-            ]
-        )
+    def init_model(self, callbacks=None, **params):
+
+        if callbacks is not None:
+
+            self.xgb_pipeline = Pipeline(
+                [
+                    ("flatten", FlattenTransformer()),
+                    ("scaler", StandardScaler()),
+                    (
+                        "xgb",
+                        xgb.XGBClassifier(callbacks=[callbacks], **params),
+                    ),
+                ]
+            )
+        else:
+            self.xgb_pipeline = Pipeline(
+                [
+                    ("flatten", FlattenTransformer()),
+                    ("scaler", StandardScaler()),
+                    (
+                        "xgb",
+                        xgb.XGBClassifier(**params),
+                    ),
+                ]
+            )
 
     def predict_categories(self, X_test):
         return self.xgb_pipeline.predict_proba(X_test)

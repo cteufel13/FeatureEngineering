@@ -753,14 +753,14 @@ class Featurizer2(FeaturizerBase):
 
             ohlcv_data = ohlcv_data.join(
                 bbo_data,
-                on=["ts_event", "rtype", "instrument_id", "symbol"],
+                on=["ts_event", "rtype", "instrument_id", "symbol", "publisher_id"],
                 how="left",
                 suffix="_bbo",
             )
 
             ohlcv_data = ohlcv_data.join(
                 imbalance_data,
-                on=["ts_event", "rtype", "instrument_id", "symbol"],
+                on=["ts_event", "rtype", "instrument_id", "symbol", "publisher_id"],
                 how="left",
                 suffix="_imbalance",
             )
