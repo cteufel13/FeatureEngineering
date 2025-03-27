@@ -1,3 +1,8 @@
+"""
+All the function that are required to be implemented by the user are defined here.
+"""
+
+
 class ModelBase:
     def __init__(self, **kwargs):
         pass

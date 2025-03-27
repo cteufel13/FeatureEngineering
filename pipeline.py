@@ -1,5 +1,5 @@
 from src.dataset.dataset2 import Dataset2
-from src.model.model import BasicXGBOOST1
+from src.model.models.BasicXGBOOST1 import BasicXGBOOST1
 
 
 def run():

@@ -9,11 +9,10 @@ from pathlib import Path
 
 from src.data.utils import drop_db_cols
 from src.data.datafetcher import DataFetcher
-from src.model.model import *
-from src.model.utils import visualize_performance
+from src.model.models.BasicXGBOOST1 import *
 from src.dataset.dataset1 import *
 from src.features.featurizer import *
-from src.model.live_test import LiveStreamPredictor
+from src.model.live_testing.live_test import LiveStreamPredictor
 
 import wandb
 from wandb.integration.xgboost import WandbCallback
