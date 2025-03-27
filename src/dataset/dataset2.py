@@ -5,6 +5,7 @@ from src.core.base import DatasetBase
 from tqdm import tqdm
 import json
 import polars as pl
+import joblib
 
 import time
 
@@ -144,8 +145,8 @@ class Dataset2(DatasetBase):
 
         trainset, labels, times = self.get_training_data()
 
-        X_train, X_test, y_train, y_test = train_test_split(
-            trainset, labels, test_size=0.2, random_state=42
+        X_train, X_test, y_train, y_test, time_train, time_test = train_test_split(
+            trainset, labels, times, test_size=0.2, random_state=42
         )
 
-        return X_train, X_test, y_train, y_test
+        return X_train, X_test, y_train, y_test, time_train, time_test

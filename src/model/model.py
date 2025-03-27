@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import xgboost as xgb
+import joblib
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
@@ -58,9 +59,9 @@ class BasicXGBOOST1(ModelBase):
         return self.xgb_pipeline.predict_proba(X_test)
 
     def save(self, path):
-        self.xgb_pipeline.named_steps["xgb"].save_model(path)
+        joblib.dump(self.xgb_pipeline, path)
         print(f"Model saved to {path}")
 
     def load(self, path):
-        self.xgb_pipeline.named_steps["xgb"].load_model(path)
+        self.xgb_pipeline = joblib.load(path)
         print(f"Model loaded from {path}")
