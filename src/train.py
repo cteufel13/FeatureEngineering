@@ -45,11 +45,16 @@ def run_pipeline(args):
     y_pred = model.predict(X_test)
     print("Evaluating accuracy over time")
 
-    eval = Evaluation(model, X_test, y_test, times_test, run_name)
+    eval = Evaluation(
+        model, X_test, y_test, times_test, run_name, column_names=dataset.columns
+    )
     eval.get_feature_sensitivity_all()
     eval.get_time_accuracy_day()
     eval.get_time_accuracy_year()
+    eval.get_shap()
+
     print("Saving model")
+
     model.save(
         path=f"saved_models/{run_name}",
     )

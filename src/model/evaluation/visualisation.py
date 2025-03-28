@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import polars as pl
 import pandas as pd
 import numpy as np
+import shap
 
 
 def plot_accuracy_over_time(
@@ -44,6 +45,7 @@ def plot_accuracy_over_time(
         label="MA_1000",
     )
 
+    # Summer trading hours (Daylight Time: EDT)\
     plt.legend()
     fig.savefig(f"saved_models/plots/{run_name}_plot1.png")
 
@@ -73,6 +75,26 @@ def plot_accuracy_over_day(
     fig = plt.figure(figsize=(20, 5))
     plt.plot(times_test_newest_datetime, accuracy_ma_100, label="Accuracy MA 100")
     plt.plot(times_test_newest_datetime, accuracy_ma_1000, label="Accuracy MA 1000")
+    # Winter trading hours (Standard Time: EST)
+    plt.axvline(
+        x=14.5,
+        color="blue",
+        linestyle="--",
+        linewidth=2,
+        label="Winter Open",
+    )
+    plt.axvline(
+        x=21.0,
+        color="blue",
+        linestyle="-",
+        linewidth=2,
+        label="Winter Close",
+    )
+
+    # Summer trading hours (Daylight Time: EDT)
+    plt.axvline(x=13.5, color="red", linestyle="--", linewidth=2, label="Summer Open")
+    plt.axvline(x=20.0, color="red", linestyle="-", linewidth=2, label="Summer Close")
+
     plt.xlabel("Time of day (UTC)")
     plt.ylabel("Accuracy")
     plt.title(f"Accuracy over day average")
@@ -100,4 +122,15 @@ def plot_sensitivity(sens, run_name):
     plt.title("Feature Sensitivity Analysis Over Time Steps")
     plt.legend()
     plt.grid(True)
-    fig.savefig(f"saved_models/plots/sensitivity_{run_name}.png")
+    fig.savefig(f"saved_models/plots/{run_name}_plot3.png")
+
+
+def plot_shap_tree(model, X_test, column_names, run_name):
+    explainer = shap.TreeExplainer(model)
+    shap_values = explainer.shap_values(X_test)
+
+    for i in range(3):
+        data = pd.DataFrame(X_test[:, :], columns=column_names)
+        shap.summary_plot(shap_values[:, :, i], data, show=False)
+        plt.savefig(f"saved_models/plots/{run_name}_Shap_Class_{i}.png")
+        plt.close()

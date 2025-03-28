@@ -1,21 +1,24 @@
 from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
+import shap
 from src.model.evaluation.visualisation import (
     plot_sensitivity,
     plot_accuracy_over_time,
     plot_accuracy_over_day,
+    plot_shap_tree,
 )
 
 
 class Evaluation:
 
-    def __init__(self, model, X_test, y_test, time_test, run_name):
+    def __init__(self, model, X_test, y_test, time_test, run_name, column_names=None):
         self.model = model
         self.X_test = X_test
         self.y_test = y_test
         self.time_test = time_test
         self.run_name = run_name
+        self.column_names = column_names
 
     def get_feature_sensitivity(self, ft_idx, X_test, delta=0.05):
         X_preturbed = X_test.copy()
@@ -80,3 +83,20 @@ class Evaluation:
         return plot_accuracy_over_day(
             self.time_test, self.model.predict(self.X_test), self.y_test, self.run_name
         )
+
+    def get_shap(self):
+
+        print("Calculating SHAP values")
+        extended_columns = []
+        for i in range(100):
+            extended_columns.extend([f"{name}_{i}" for name in self.column_names])
+
+        if self.model.base_library == "xgboost":
+            plot_shap_tree(
+                model=self.model.xgb_pipeline.named_steps["xgb"],
+                X_test=self.model.xgb_pipeline.named_steps["scaler"].transform(
+                    self.X_test
+                ),
+                column_names=extended_columns,
+                run_name=self.run_name,
+            )

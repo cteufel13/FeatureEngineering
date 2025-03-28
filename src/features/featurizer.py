@@ -22,9 +22,6 @@ class Featurizer1(FeaturizerBase):
 
 
 class Featurizer2(FeaturizerBase):
-    """
-    Outdated Featurizer class
-    """
 
     def __init__(self):
         self.raw_data_paths = get_files_folder(RAW_PATH, extension=".parquet")
@@ -57,9 +54,9 @@ class Featurizer2(FeaturizerBase):
             ["ts_event", "rtype", "publisher_id", "instrument_id", "symbol"]
         )
 
-        self.process_bbos(bbo_data, time_symbol)
+        # self.process_bbos(bbo_data, time_symbol)
         self.process_ohlcv(ohlcv_data)
-        self.process_imbalance(imbalance_data, time_symbol)
+        # self.process_imbalance(imbalance_data, time_symbol)
 
     def load_data(self):
         ohlcv_data = pl.read_parquet(RAW_PATH + self.raw_data_paths[0])
@@ -792,19 +789,35 @@ class Featurizer2(FeaturizerBase):
     @staticmethod
     def compute_rsi(series: np.ndarray, period: int = 14):
         """
-        Computes the RSI of a numpy array given a period.
+        Computes a causal RSI of a numpy array given a period.
         """
-        delta = series[1:] - series[:-1]
-        gain = delta.clip(min=0)
-        loss = -delta.clip(max=0)
+        rsi = np.zeros_like(series)
 
-        avg_gain = np.zeros_like(series)
-        avg_loss = np.zeros_like(series)
-        avg_gain[period] = gain[:period].mean()
-        avg_loss[period] = loss[:period].mean()
+        # Initialize gains and losses
+        gains = np.zeros_like(series)
+        losses = np.zeros_like(series)
 
-        for i in range(period + 1, len(series) - 1):
-            avg_gain[i] = (avg_gain[i - 1] * (period - 1) + gain[i]) / period
-            avg_loss[i] = (avg_loss[i - 1] * (period - 1) + loss[i]) / period
-        rs = avg_gain / avg_loss
-        return 100 - (100 / (1 + rs))
+        # Compute initial delta
+        for i in range(1, len(series)):
+            delta = series[i] - series[i - 1]
+            gains[i] = max(delta, 0)
+            losses[i] = max(-delta, 0)
+
+        # Compute initial average gain and loss
+        avg_gain = np.mean(gains[1 : period + 1])
+        avg_loss = np.mean(losses[1 : period + 1])
+
+        # Compute RSI for each point
+        for i in range(period, len(series)):
+            # Update averages using exponential moving average concept
+            avg_gain = ((period - 1) * avg_gain + gains[i]) / period
+            avg_loss = ((period - 1) * avg_loss + losses[i]) / period
+
+            # Avoid division by zero
+            if avg_loss == 0:
+                rsi[i] = 100
+            else:
+                rs = avg_gain / avg_loss
+                rsi[i] = 100 - (100 / (1 + rs))
+
+        return rsi

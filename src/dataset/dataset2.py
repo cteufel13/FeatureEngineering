@@ -17,6 +17,7 @@ class Dataset2(DatasetBase):
         self.log = self.load_log(LOG_PATH)
         self.symbols = list(self.log["symbols"].keys())
         self.dataset = {}
+        self.columns = []
 
     def get_training_data(self):
         for symbol in tqdm(self.symbols):
@@ -93,6 +94,7 @@ class Dataset2(DatasetBase):
 
     def make_samples(self, data_symbol: pl.DataFrame) -> np.ndarray:
         data_symbol, aux_data = self.drop_columns(data_symbol)
+        self.columns = data_symbol.columns
         data_np = data_symbol.to_numpy()
         time_data_np = aux_data["ts_event"].to_numpy()
 
@@ -100,13 +102,13 @@ class Dataset2(DatasetBase):
         n_samples = len(data_symbol) // total_length
         n_features = len(data_symbol.columns)
 
-        samples = np.zeros((n_samples, total_length, n_features - 1))
+        samples = np.zeros((n_samples, total_length, n_features))
         times_samples = np.empty((n_samples, total_length), dtype="datetime64[ns]")
 
         for i in range(n_samples):
             start = i * total_length
             end = start + total_length
-            sequence = data_np[start:end, 1:]
+            sequence = data_np[start:end, :]
             date_sequence = time_data_np[start:end]
             samples[i] = sequence
             times_samples[i] = date_sequence
