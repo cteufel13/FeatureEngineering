@@ -162,9 +162,7 @@ class DataFetcher:
                 print("Updating end date for", symbol, schema, end_date)
                 self.symbols[symbol]["db_schemas"][schema]["end_date"] = end_date
 
-        self.log["schemas"] = list(
-            set(self.log.get("schemas", []) + list(self.symbols.keys()))
-        )
+        self.log["schemas"] = list(set(self.log.get("schemas", [])))
         self.save_log(self.log)
 
     def join_cache(self, schemas):
