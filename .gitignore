@@ -173,3 +173,7 @@ cython_debug/
 wandb/
 
 *.parquet
+
+
+.DS_Store
+__pycache__/
