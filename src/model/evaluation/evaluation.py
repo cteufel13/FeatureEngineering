@@ -54,7 +54,6 @@ class Evaluation:
 
         sensitivity = {}
 
-        print("Calculating feature sensitivity")
         for ft_idx in tqdm(range(n_features)):
             sensitivity[ft_idx] = self.get_feature_sensitivity(
                 ft_idx, unperturbed_X_test, delta=delta
@@ -64,7 +63,6 @@ class Evaluation:
                     sensitivity[ft_idx][preds], self.y_test
                 )
 
-        print("Plotting feature sensitivity")
         plot_sensitivity(sensitivity, self.run_name)
 
         return sensitivity
@@ -73,20 +71,17 @@ class Evaluation:
         return np.mean(y_pred == y_test)
 
     def get_time_accuracy_year(self):
-        print("Plotting accuracy over years")
         return plot_accuracy_over_time(
             self.time_test, self.model.predict(self.X_test), self.y_test, self.run_name
         )
 
     def get_time_accuracy_day(self):
-        print("Plotting accuracy over day")
         return plot_accuracy_over_day(
             self.time_test, self.model.predict(self.X_test), self.y_test, self.run_name
         )
 
     def get_shap(self):
 
-        print("Calculating SHAP values")
         extended_columns = []
         for i in range(100):
             extended_columns.extend([f"{name}_{i}" for name in self.column_names])

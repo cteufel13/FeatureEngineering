@@ -1,7 +1,8 @@
 from src.data.datafetcher import DataFetcher
+from src.features.featurizer import Featurizer2
 
 
-def main():
+def fetch_data():
     # Initialize the DataFetcher
     data_fetcher = DataFetcher()
     print("Data fetching and updating completed.")
@@ -15,5 +16,12 @@ def main():
     data_fetcher.join_cache(schemas=schemas)
 
 
+def featurize():
+
+    featurizer = Featurizer2()
+    featurizer.process()
+
+
 if __name__ == "__main__":
-    main()
+    # fetch_data()
+    featurize()

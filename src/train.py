@@ -4,36 +4,40 @@ from src.features.featurizer import *
 from src.model.models.BasicXGBOOST1 import BasicXGBOOST1
 from src.model.evaluation.evaluation import Evaluation
 from datetime import datetime
+import time
 
 
 def run_pipeline(args):
 
     run_time = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-    dataset_class = globals()[args.dataset]
+    dataset_class = globals()[args.dataset_version]
     model_class = globals()[args.model]
     featurizer_class = globals()[args.featurizer]
 
     len_sequence = args.seq_len
     predict_horizon = args.predict_horizon
 
+    use_kfold = args.use_kfold
+
     if args.make_new_features:
-        print("Making new features")
         featurizer = featurizer_class()
         featurizer.process()
         featurizer.process_symbols()
 
-    print("Initializing dataset")
     dataset = dataset_class(
-        sequence_length=len_sequence, predict_horizon=predict_horizon
+        sequence_length=len_sequence,
+        predict_horizon=predict_horizon,
+        data_type=args.data_type,
+        use_ta=args.use_ta,
     )
-    print("Getting train test split")
+    print("Dataset Columns:", dataset.columns)
+
     X_train, X_test, y_train, y_test, times_train, times_test = dataset.get_train_test()
 
-    print("Initializing model")
-    model = model_class()
-    model.init_model()
+    model = model_class(use_kfold=use_kfold)
 
-    print("Fitting model")
+    model.fit_kfold(dataset.X, dataset.y)
+
     model.fit(X_train, y_train)
 
     print("Evaluating model")

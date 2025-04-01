@@ -441,6 +441,10 @@ class Featurizer2(FeaturizerBase):
             [pl.col("stochastic_k").rolling_mean(window_size=3).alias("stochastic_d")]
         )
 
+        ohlcv_data_symbol = ohlcv_data_symbol.with_columns(
+            [pl.col("close").rolling_std(window_size=100).alias("std")]
+        )
+
         return ohlcv_data_symbol
 
     def process_imbalance(self, imbalance_data: pl.DataFrame, time_data: pl.DataFrame):
