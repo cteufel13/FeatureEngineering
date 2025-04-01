@@ -739,12 +739,31 @@ class Featurizer2(FeaturizerBase):
         for symbol in self.symbols:
             print(f"Processing symbol {symbol}")
             ohlcv_data = pl.read_parquet(f"data/processed/{symbol}/ohlcv_data.parquet")
+
+            keys = ["ts_event", "rtype", "instrument_id", "symbol", "publisher_id"]
+            suffix_names = {
+                col: f"{col}_ohlcv" for col in ohlcv_data.columns if col not in keys
+            }
+
+            ohlcv_data = ohlcv_data.rename(suffix_names)
+
             bbo_data = pl.read_parquet(f"data/processed/{symbol}/bbo_data.parquet")
             imbalance_data = pl.read_parquet(
                 f"data/processed/{symbol}/imbalance_data.parquet"
             )
+            imbalance_data = imbalance_data.rename(
+                {
+                    col: f"{col}_imbalance"
+                    for col in imbalance_data.columns
+                    if col not in keys
+                }
+            )
+            bbo_data = bbo_data.rename(
+                {col: f"{col}_bbo" for col in bbo_data.columns if col not in keys}
+            )
 
             ohlcv_data = ohlcv_data.sort("ts_event")
+
             bbo_data = bbo_data.sort("ts_event").with_columns(
                 pl.col("ts_event").cast(pl.Datetime("ns", time_zone="UTC"))
             )
@@ -754,17 +773,20 @@ class Featurizer2(FeaturizerBase):
 
             ohlcv_data = ohlcv_data.join(
                 bbo_data,
-                on=["ts_event", "rtype", "instrument_id", "symbol", "publisher_id"],
+                on=keys,
                 how="left",
                 suffix="_bbo",
             )
 
             ohlcv_data = ohlcv_data.join(
                 imbalance_data,
-                on=["ts_event", "rtype", "instrument_id", "symbol", "publisher_id"],
+                on=keys,
                 how="left",
                 suffix="_imbalance",
             )
+
+            keys = {col: f"{col}_general" for col in keys}
+            ohlcv_data = ohlcv_data.rename(keys)
 
             ohlcv_data.write_parquet(f"data/processed/{symbol}/merged_data.parquet")
 

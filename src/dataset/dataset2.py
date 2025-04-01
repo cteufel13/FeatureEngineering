@@ -2,9 +2,10 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from src.core.base import DatasetBase
-from tqdm import tqdm
-import json
 import polars as pl
+from typing import List, Dict, Any, Union
+import re
+import json
 
 LOG_PATH = "data/raw/log.json"
 
@@ -15,7 +16,7 @@ class Dataset2(DatasetBase):
         self,
         sequence_length=100,
         predict_horizon=10,
-        data_type="merged_data",
+        data_type: Union[List[str], str] = "merged_data",
         use_ta=True,
     ):
         self.sequence_length = sequence_length
@@ -26,7 +27,12 @@ class Dataset2(DatasetBase):
         self.columns = []
         self.std = []
 
-        self.data_type = data_type
+        if isinstance(data_type, str):
+            self.data_type = [data_type]
+        elif isinstance(data_type, list):
+            self.data_type = data_type
+        self.data_type = self.data_type + ["general"]
+
         self.use_ta = use_ta
 
         self.X, self.y, self.times = self.get_training_data()
@@ -67,7 +73,15 @@ class Dataset2(DatasetBase):
         return complete_samples, time_samples, std_samples
 
     def load_data_symbol(self, symbol: str) -> pl.DataFrame:
-        data = pl.read_parquet(f"data/processed/{symbol}/{self.data_type}.parquet")
+
+        data = pl.read_parquet(f"data/processed/{symbol}/merged_data.parquet")
+        filtered_cols = [
+            col
+            for col in data.columns
+            if any(col.endswith(suf) for suf in self.data_type)
+        ]
+        data = data.select(filtered_cols)
+
         return data
 
     def load_log(self, path) -> dict:
@@ -106,13 +120,27 @@ class Dataset2(DatasetBase):
     def make_samples(self, data_symbol: pl.DataFrame) -> np.ndarray:
         data_symbol, aux_data, std_data = self.drop_columns(data_symbol)
 
-        if self.use_ta == False and self.data_type == "ohlcv_data":
-            data_symbol = data_symbol.select(["open", "high", "low", "close", "volume"])
+        if self.use_ta == False and "ohlcv" in self.data_type:
+
+            data_symbol = data_symbol.select(
+                [
+                    c
+                    for c in [
+                        "open_ohlcv",
+                        "high_ohlcv",
+                        "low_ohlcv",
+                        "close_ohlcv",
+                        "volume_ohlcv",
+                    ]
+                    if c in data_symbol.columns
+                ]
+                + [c for c in data_symbol.columns if not c.endswith("_ohlcv")]
+            )
 
         self.columns = data_symbol.columns
 
         data_np = data_symbol.to_numpy()
-        time_data_np = aux_data["ts_event"].to_numpy()
+        time_data_np = aux_data["ts_event_general"].to_numpy()
 
         total_length = self.sequence_length + self.predict_horizon
         n_samples = len(data_symbol) // total_length
@@ -154,14 +182,26 @@ class Dataset2(DatasetBase):
 
     def drop_columns(self, data: pl.DataFrame) -> pl.DataFrame:
         removed_data = data.select(
-            ["ts_event", "rtype", "publisher_id", "instrument_id", "symbol"]
+            [
+                "ts_event_general",
+                "rtype_general",
+                "publisher_id_general",
+                "instrument_id_general",
+                "symbol_general",
+            ]
         )
         data = data.drop(
-            ["ts_event", "rtype", "publisher_id", "instrument_id", "symbol"]
+            [
+                "ts_event_general",
+                "rtype_general",
+                "publisher_id_general",
+                "instrument_id_general",
+                "symbol_general",
+            ]
         )
 
-        std = data.select("std").to_numpy()
-        data = data.drop("std")
+        std = data.select("std_ohlcv").to_numpy()
+        data = data.drop("std_ohlcv")
         return data, removed_data, std
 
     def get_train_test(self):

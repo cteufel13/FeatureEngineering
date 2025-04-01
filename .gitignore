@@ -177,3 +177,4 @@ wandb/
 
 .DS_Store
 __pycache__/
+saved_models/

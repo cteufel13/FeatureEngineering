@@ -36,8 +36,10 @@ def run_pipeline(args):
 
     model = model_class(use_kfold=use_kfold)
 
+    print("fitting Kfold")
     model.fit_kfold(dataset.X, dataset.y)
 
+    print("Training model")
     model.fit(X_train, y_train)
 
     print("Evaluating model")

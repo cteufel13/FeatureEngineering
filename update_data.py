@@ -20,6 +20,7 @@ def featurize():
 
     featurizer = Featurizer2()
     featurizer.process()
+    featurizer.process_symbols()
 
 
 if __name__ == "__main__":
